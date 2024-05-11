@@ -1,0 +1,75 @@
+body {
+    height: 100vh;
+    width: 100vw;        
+    margin: 0px;
+    padding: 0px;
+    display: flex;
+    align-items:center;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mainContainer {
+    height: 500px;
+    width: 65%;
+    border: 2px solid black;
+    justify-content: center;
+    display: flex;
+    overflow: auto;
+}
+
+.dataTable{
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.margin{
+    margin: 10px;
+}
+
+.form{
+    display: none;
+    flex-direction: column;
+    align-items: center;
+}
+
+.formContainer {
+    height: 500px;
+    width: 30%;
+    border: 2px solid black;
+}
+
+.buttons{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.optionsContainer {
+    height: 100%;
+    width: 95%; 
+}
+
+.formInputs{
+    display: block;
+    margin-bottom: 10px;
+}
+
+#myTable {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.encabezado {
+    background-color: #f2f2f2;
+}
+
+.hidden {
+    display: none;
+}

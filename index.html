@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/Parcial_1/styles.css">
+    <title>Document</title>
+</head>
+
+<body>
+    <div class="mainContainer" id="div_1">
+        <div class="optionsContainer">
+            <p>FORM DATOS</p>
+            <div class="margin">
+                <label for="filtro">Filtrar Por: </label>
+                <select id="filtro" onchange="filtrarUsuarios()">
+                    <option value="todos">Todos</option>
+                    <option value="ciudadanos">Ciudadanos</option>
+                    <option value="extranjeros">Extranjeros</option>
+                </select>
+            </div>
+            <div class="margin">
+                <label for="promedio">Calcular:</label>
+                <input type="text" id="promedio">
+                <button onclick="calcularEdadPromedio()">Calcular</button>
+            </div>
+            <p>MOSTRAR COLUMNAS: </p>
+            <div class="margin">
+                <input type="checkbox" id="checkId" checked onchange="toggleColumn('checkId', 0)">ID
+                <input type="checkbox" id="checkDni" checked onchange="toggleColumn('checkDni', 1)">Dni
+                <input type="checkbox" id="checkNombre" checked onchange="toggleColumn('checkNombre', 2)">Nombre
+                <input type="checkbox" id="checkApellido" checked onchange="toggleColumn('checkApellido', 3)">Apellido
+                <input type="checkbox" id="checkOrigen" checked onchange="toggleColumn('checkOrigen', 4)">Origen
+                <input type="checkbox" id="checkFecha" checked onchange="toggleColumn('checkFecha', 5)">Fecha
+            </div>
+
+            <table id="myTable" class="dataTable">
+                <tr>
+                    <th class="encabezado" id="thId">ID</th>
+                    <th class="encabezado" id="thDni">DNI</th>
+                    <th class="encabezado" id="thNombre">Nombre</th>
+                    <th class="encabezado" id="thApellido">Apellido</th>
+                    <th class="encabezado" id="thOrigen">Origen</th>
+                    <th class="encabezado" id="thFecha">Fecha Nacimiento</th>
+                </tr>
+            </table>
+            <button id="agregar" onclick="setForm()">Agregar</button>
+        </div>
+    </div>
+
+    <div class="hidden" id="div_2">
+        <div class="optionsContainer">
+            <h1>Formulario ABM</h1>
+            <select name="" id="userType" class="formInputs" onchange="switchUserTypes()">
+                <option value="vacio"> ---</option>
+                <option value="ciudadano"> Ciudadano</option>
+                <option value="extranjero"> Extranjero</option>
+            </select>
+            <div class="form" id="formId">
+                <div class="margin">
+                    <label id="labelId">ID: </label>
+                    <input type="number" id="inputId" class="formInputs">
+                    <label id="labelNombre">Nombre: </label>
+                    <input type="text" id="inputNombre" class="formInputs">
+                    <label id="labelApellido">Apellido: </label>
+                    <input type="text" id="inputApellido" class="formInputs">
+                    <label id="labelOrigen">Origen: </label>
+                    <input type="text" id="inputOrigen" class="formInputs">
+                    <label id="labelDni">Dni: </label>
+                    <input type="number" id="inputDni" class="formInputs">
+                    <label id="labelFecha">Fecha Nacimiento: </label>
+                    <input type="number" id="inputFecha" class="formInputs">
+                </div>
+            </div>
+            <div class="buttons">
+                <button id="btnCrear" onclick="manageUser(false)">Crear</button>
+                <button id="btnModificar" onclick="manageUser(true)">Modificar</button>
+                <button id="btnBorrar" onclick="deleteUserFromList()">Borrar</button>
+                <button onclick="OcultarVistaForm()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function Persona(id, nombre, apellido, fechaNacimiento) {
+            this.id = id;
+            this.nombre = nombre;
+            this.apellido = apellido;
+            this.fechaNacimiento = fechaNacimiento;
+        }
+
+        function Ciudadano(id, nombre, apellido, fechaNacimiento, dni) {
+            this.dni = dni;
+            Persona.call(this, id, nombre, apellido, fechaNacimiento);
+        }
+
+        function Extranjero(id, nombre, apellido, fechaNacimiento, paisOrigen) {
+            this.paisOrigen = paisOrigen;
+            Persona.call(this, id, nombre, apellido, fechaNacimiento);
+        }
+
+        Ciudadano.prototype.__proto__ = Persona.prototype;
+        Extranjero.prototype.__proto__ = Persona.prototype;
+
+        var usuarios = [];
+        var json = '[{"id":1,"apellido":"Serrano","nombre":"Horacio","fechaNacimiento":19840103,"dni":45876942},{"id":2,"apellido":"Casas","nombre":"Julian","fechaNacimiento":19990723,"dni":98536214},{"id":3,"apellido":"Galeano","nombre":"Julieta","fechaNacimiento":20081103,"dni":74859612},{"id":4,"apellido":"Molina","nombre":"Juana","fechaNacimiento":19681201,"paisOrigen":"Paraguay"},{"id":5,"apellido":"Barrichello","nombre":"Rubens","fechaNacimiento":19720523,"paisOrigen":"Brazil"},{"id":666,"apellido":"Hkkinen","nombre":"Mika","fechaNacimiento":19680928,"paisOrigen":"Finlandia"}]';
+        var listaFiltrada = [];
+
+        parseJsonToList(json);
+        var idUnico = usuarios[usuarios.length - 1].id;
+        setObjetsList(usuarios);
+
+        function filtrarUsuarios() {
+            var filtro = document.getElementById("filtro").value;
+            switch (filtro) {
+                case 'ciudadanos':
+                    listaFiltrada = filtrarPorTipo(Ciudadano);
+                    break;
+                case 'extranjeros':
+                    listaFiltrada = filtrarPorTipo(Extranjero);
+                    break;
+                default:
+                    listaFiltrada = usuarios.slice();
+                    break;
+            }
+            setObjetsList(listaFiltrada);
+
+        }
+
+        function parseJsonToList(json) {
+            var objetos = JSON.parse(json);
+            objetos.forEach(function (objeto) {
+                if (objeto.dni !== undefined) {
+                    usuarios.push(new Ciudadano(objeto.id, objeto.nombre, objeto.apellido, objeto.fechaNacimiento, objeto.dni));
+
+                } else if (objeto.paisOrigen !== undefined) {
+                    usuarios.push(new Extranjero(objeto.id, objeto.nombre, objeto.apellido, objeto.fechaNacimiento, objeto.paisOrigen))
+                }
+            })
+        }
+
+        function filtrarPorTipo(tipo) {
+            return usuarios.filter(function (usuario) {
+                return usuario instanceof tipo;
+            })
+        }
+
+        function calcularEdadPromedio() {
+            var promedioId = document.getElementById("promedio");
+            var promedio = 0;
+            var edad;
+            var edadStr;
+
+            for (var i = 0; i < (listaFiltrada.length === 0 ? usuarios : listaFiltrada).length; i++) {
+                edadStr = (listaFiltrada.length === 0 ? usuarios[i] : listaFiltrada[i]).fechaNacimiento.toString();
+                edad = 2024 - parseInt(edadStr.substring(0, 4));
+                promedio += edad
+            }
+            promedioId.value = promedio;
+        }
+
+        function toggleColumn(checkboxId, index) {
+            var checkBox = document.getElementById(checkboxId);
+            var table = document.getElementById("myTable");
+            var column = table.querySelectorAll("tr > th:nth-child(" + (index + 1) + "), tr > td:nth-child(" + (index + 1) + ")");
+            if (checkBox.checked) {
+                for (var i = 0; i < column.length; i++) {
+                    column[i].style.display = "";
+                }
+            } else {
+                for (var i = 0; i < column.length; i++) {
+                    column[i].style.display = "none";
+                }
+            }
+        }
+
+        function setObjetsList(lista) {
+            var table = document.getElementById("myTable");
+            while (table.rows.length > 1) {
+                table.deleteRow(1);
+            }
+            lista.forEach(function (usuario, index) {
+                var row = document.createElement('tr');
+                row.setAttribute('data-index', index);
+                row.addEventListener("dblclick", setFormInputs)
+                var properties = ['id', 'dni', 'nombre', 'apellido', 'paisOrigen', 'fechaNacimiento'];
+                properties.forEach(function (prop) {
+                    var cell = document.createElement('td');
+                    cell.textContent = usuario.hasOwnProperty(prop) ? usuario[prop] : "-";
+                    row.appendChild(cell);
+                });
+                table.appendChild(row);
+            });
+        }
+
+        function deleteUserFromList() {
+            var id = document.getElementById('inputId').value;
+            var index;
+            if (listaFiltrada.length === 0) {
+                index = usuarios.findIndex(function (usuario) {
+                    return usuario.id === parseInt(id);
+                });
+            } else {
+                index = listaFiltrada.findIndex(function (usuario) {
+                    return usuario.id === parseInt(id);
+                });
+            }
+
+            if (index !== -1) {
+                if (listaFiltrada.length === 0) {
+                    usuarios.splice(index, 1)
+                } else {
+                    var deleted = listaFiltrada[index];
+                    listaFiltrada.splice(index, 1);
+                    actualizarListaPrincipal(deleted, true);
+
+                }
+                OcultarVistaForm();
+                setObjetsList(listaFiltrada.length === 0 ? usuarios : listaFiltrada);
+            }
+        }
+
+        function setFormInputs(event) {
+            var index = event.currentTarget.getAttribute('data-index');
+            var user = listaFiltrada.length === 0 ? usuarios[index] : listaFiltrada[index];
+
+            OcultarVistaMain();
+            document.getElementById("btnCrear").style.display = 'none';
+            document.getElementById("btnModificar").style.display = 'flex';
+            document.getElementById("btnBorrar").style.display = 'flex';
+
+            document.getElementById('inputId').value = user.id;
+            document.getElementById('inputId').disabled = true;
+            document.getElementById('inputDni').value = user.dni;
+            document.getElementById('inputNombre').value = user.nombre;
+            document.getElementById('inputApellido').value = user.apellido;
+            document.getElementById('inputOrigen').value = user.paisOrigen;
+            document.getElementById('inputFecha').value = user.fechaNacimiento;
+
+            if (user instanceof Ciudadano) {
+                document.getElementById("userType").value = 'ciudadano';
+                document.getElementById('labelOrigen').style.display = 'none';
+                document.getElementById('inputOrigen').style.display = 'none';
+
+            } else if (user instanceof Extranjero) {
+                document.getElementById("userType").value = 'extranjero';
+                document.getElementById('labelDni').style.display = 'none';
+                document.getElementById('inputDni').style.display = 'none';
+            }
+            document.getElementById("userType").disabled = true;
+            document.getElementById('formId').style.display = 'flex';
+        }
+
+        function setForm() {
+            document.getElementById("btnCrear").style.display = 'flex';
+            document.getElementById("btnModificar").style.display = 'none';
+            document.getElementById("btnBorrar").style.display = 'none';
+            OcultarVistaMain();
+            inputId.value = idUnico + 1;
+            inputId.disabled = true;
+        }
+
+        function manageUser(modificar) {
+            var id = document.getElementById('inputId').value;
+            var dni = document.getElementById('inputDni').value;
+            var nombre = document.getElementById('inputNombre').value;
+            var apellido = document.getElementById('inputApellido').value;
+            var origen = document.getElementById('inputOrigen').value;
+            var fechaNacimiento = document.getElementById('inputFecha').value;
+            var userType = document.getElementById('userType').value;
+            var allowed = false;
+
+            if (modificar) {
+                document.getElementById("btnCrear").style.display = 'none';
+                document.getElementById("btnModificar").style.display = 'flex';
+                document.getElementById("btnBorrar").style.display = 'flex';
+                var userFound = listaFiltrada.length === 0 ?
+                    usuarios.find(function (usuario) {
+                        return usuario.id === parseInt(id);
+                    }) :
+                    listaFiltrada.find(function (usuario) {
+                        return usuario.id === parseInt(id);
+                    });
+
+                if (userFound !== undefined) {
+                    if (userFound instanceof Ciudadano) {
+                        userFound.dni = parseInt(dni);
+                        userFound.nombre = nombre;
+                        userFound.apellido = apellido;
+                        userFound.fechaNacimiento = parseInt(fechaNacimiento);
+                        if (isValidCiudadano(nombre, apellido, dni, fechaNacimiento)) {
+                            allowed = true;
+                        } else {
+                            alert("Revise todos los campos.");
+                        }
+                    } else if (userFound instanceof Extranjero) {
+                        userFound.nombre = nombre;
+                        userFound.apellido = apellido;
+                        userFound.origen = origen;
+                        userFound.fechaNacimiento = parseInt(fechaNacimiento);
+                        if (isValidExtranjero(nombre, apellido, origen, fechaNacimiento)) {
+                            allowed = true;
+                        } else {
+                            alert("Revise todos los campos.");
+                        }
+
+                        if (allowed) {
+                            actualizarListaPrincipal(userFound, false);
+                        }
+                    }
+                }
+            } else {
+                var newUser
+                switch (userType) {
+                    case 'ciudadano':
+                        if (isValidCiudadano(nombre, apellido, dni, fechaNacimiento)) {
+                            newUser = new Ciudadano(parseInt(id), nombre, apellido, parseInt(fechaNacimiento), parseInt(dni));
+                            allowed = true;
+                        } else {
+                            alert("Revise todos los campos.");
+                        }
+                        break;
+                    case 'extranjero':
+                        if (isValidExtranjero(nombre, apellido, origen, fechaNacimiento)) {
+                            newUser = new Extranjero(parseInt(id), nombre, apellido, parseInt(fechaNacimiento), origen)
+                            allowed = true;
+                        } else {
+                            alert("Revise todos los campos.");
+                        }
+                        break;
+                    case 'vacio':
+                        alert("Debe seleccionar un tipo de usuario en el popUp.")
+                        break;
+                }
+                if (allowed) {
+                    if (listaFiltrada.length === 0) {
+                        usuarios.push(newUser);
+                    } else {
+                        listaFiltrada.push(newUser);
+                        usuarios.push(newUser);
+                    }
+                    idUnico++;
+                }
+            }
+            if (allowed) {
+                OcultarVistaForm();
+                clearForm();
+                setObjetsList(listaFiltrada.length === 0 ? usuarios : listaFiltrada);
+            }
+        }
+
+        function isValidCiudadano(nombre, apellido, dni, fechaNacimiento) {
+            return nombre !== '' && apellido !== '' && dni > 0 && fechaNacimiento.length === 8 && parseInt(fechaNacimiento.substring(0,4)) <= 2024;
+        }
+
+        function isValidExtranjero(nombre, apellido, origen, fechaNacimiento) {
+            return nombre !== '' && apellido !== '' && origen !== '' && fechaNacimiento.length === 8;
+        }
+
+        function switchUserTypes() {
+            var userType = document.getElementById("userType").value;
+            switch (userType) {
+                case 'ciudadano':
+                    document.getElementById("formId").style.display = 'flex'
+                    document.getElementById('inputOrigen').style.display = 'none';
+                    document.getElementById('inputDni').style.display = 'block';
+                    document.getElementById('labelOrigen').style.display = 'none';
+                    document.getElementById('labelDni').style.display = 'block';
+                    break;
+                case 'extranjero':
+                    document.getElementById("formId").style.display = 'flex'
+                    document.getElementById('inputOrigen').style.display = 'block';
+                    document.getElementById('inputDni').style.display = 'none';
+                    document.getElementById('labelOrigen').style.display = 'block';
+                    document.getElementById('labelDni').style.display = 'none';
+                    break;
+                case 'vacio':
+                    document.getElementById("formId").style.display = 'none';
+                    break;
+            }
+        }
+
+        function actualizarListaPrincipal(usuario, isDelete) {
+            for (let i = 0; i < usuarios.length; i++) {
+                if (usuarios[i].id === usuario.id) {
+                    isDelete ?
+                        usuarios.splice(i, 1) :
+                        usuarios[i] = usuario;
+                    return;
+                }
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('inputId').value = "";
+            document.getElementById('inputDni').value = "";
+            document.getElementById('inputNombre').value = "";
+            document.getElementById('inputApellido').value = "";
+            document.getElementById('inputOrigen').value = "";
+            document.getElementById('inputFecha').value = "";
+
+            document.getElementById('labelId').style.display = 'block';
+            document.getElementById('labelOrigen').style.display = 'block';
+            document.getElementById('labelDni').style.display = 'block';
+
+            document.getElementById('inputOrigen').style.display = 'block';
+            document.getElementById('inputDni').style.display = 'block';
+
+            document.getElementById('userType').disabled = false;
+            document.getElementById('userType').value = 'vacio';
+            document.getElementById('formId').style.display = 'none';
+        }
+
+        function OcultarVistaMain() {
+            var div_1 = document.getElementById("div_1");
+            var div_2 = document.getElementById("div_2");
+            div_1.classList.replace("mainContainer", "hidden");
+            div_2.classList.replace("hidden", "formContainer");
+        }
+
+        function OcultarVistaForm() {
+            var div_1 = document.getElementById("div_1");
+            var div_2 = document.getElementById("div_2");
+            div_1.classList.replace("hidden", "mainContainer");
+            div_2.classList.replace("formContainer", "hidden");
+            clearForm();
+        }
+
+    </script>
+</body>
+
+</html>
