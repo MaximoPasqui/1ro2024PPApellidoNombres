@@ -124,7 +124,6 @@
                     break;
             }
             setObjetsList(listaFiltrada);
-
         }
 
         function parseJsonToList(json) {
@@ -154,9 +153,11 @@
             for (var i = 0; i < (listaFiltrada.length === 0 ? usuarios : listaFiltrada).length; i++) {
                 edadStr = (listaFiltrada.length === 0 ? usuarios[i] : listaFiltrada[i]).fechaNacimiento.toString();
                 edad = 2024 - parseInt(edadStr.substring(0, 4));
-                promedio += edad
+                promedio += edad;
             }
-            promedioId.value = promedio;
+            listaFiltrada.length === 0 ?
+                promedioId.value = (promedio / usuarios.length).toFixed(2) :
+                promedioId.value = (promedio / listaFiltrada.length).toFixed(2);
         }
 
         function toggleColumn(checkboxId, index) {
@@ -172,6 +173,20 @@
                     column[i].style.display = "none";
                 }
             }
+        }
+
+        function applyColumnVisibility() {
+            var checkboxes = [
+                { id: 'checkId', index: 0 },
+                { id: 'checkDni', index: 1 },
+                { id: 'checkNombre', index: 2 },
+                { id: 'checkApellido', index: 3 },
+                { id: 'checkOrigen', index: 4 },
+                { id: 'checkFecha', index: 5 }
+            ];
+            checkboxes.forEach(function (checkbox) {
+                toggleColumn(checkbox.id, checkbox.index);
+            });
         }
 
         function setObjetsList(lista) {
@@ -191,6 +206,7 @@
                 });
                 table.appendChild(row);
             });
+            applyColumnVisibility();
         }
 
         function deleteUserFromList() {
@@ -350,7 +366,7 @@
         }
 
         function isValidCiudadano(nombre, apellido, dni, fechaNacimiento) {
-            return nombre !== '' && apellido !== '' && dni > 0 && fechaNacimiento.length === 8 && parseInt(fechaNacimiento.substring(0,4)) <= 2024;
+            return nombre !== '' && apellido !== '' && dni > 0 && fechaNacimiento.length === 8 && parseInt(fechaNacimiento.substring(0, 4)) <= 2024;
         }
 
         function isValidExtranjero(nombre, apellido, origen, fechaNacimiento) {
